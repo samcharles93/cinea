@@ -8,7 +8,6 @@ require (
 	github.com/go-chi/jwtauth/v5 v5.3.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/reugn/go-quartz v0.14.0
-	github.com/vansante/go-ffprobe v1.1.0
 	golang.org/x/crypto v0.33.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.7
@@ -34,7 +33,6 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	gopkg.in/vansante/go-ffprobe.v2 v2.2.1 // indirect
 )
 
 require (
@@ -45,7 +43,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/rs/zerolog v1.33.0
 	golang.org/x/text v0.22.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
