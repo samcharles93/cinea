@@ -1,0 +1,11 @@
+{{ define "notification" }}
+{{ if .Flashes }}
+<div class="notifications">
+    {{ range .Flashes }}
+    <div class="notification">
+        {{ . }}
+    </div>
+    {{ end }}
+</div>
+{{ end }}
+{{ end }}

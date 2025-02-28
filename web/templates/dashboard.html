@@ -1,0 +1,29 @@
+{{ define "content" }}
+<div class="dashboard">
+    <h1>Welcome to Cinea Media Server</h1>
+    
+    {{ if .User }}
+        <p>Hello, {{ .User.Username }}!</p>
+    {{ else }}
+        <p>Please log in to access all features.</p>
+    {{ end }}
+    
+    <div class="dashboard-cards">
+        <div class="card">
+            <h2>Media Stats</h2>
+            <p>Browse your media collection and see statistics.</p>
+            <a href="/media" class="button">Browse Media</a>
+        </div>
+        
+        {{ if .User }}
+            {{ if eq .User.Role "admin" }}
+            <div class="card">
+                <h2>User Management</h2>
+                <p>Manage users and permissions.</p>
+                <a href="/users" class="button">Manage Users</a>
+            </div>
+            {{ end }}
+        {{ end }}
+    </div>
+</div>
+{{ end }}

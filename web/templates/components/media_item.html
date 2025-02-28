@@ -1,0 +1,7 @@
+{{ define "media_item" }}
+<div class="media-item">
+    <h3>{{ .Title }}</h3>
+    <p>Type: {{ .MediaType }}</p>
+    <a href="/media/details/{{ .ID }}">View Details</a>
+</div>
+{{ end }}

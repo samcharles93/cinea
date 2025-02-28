@@ -1,0 +1,10 @@
+{{ define "content" }}
+<h2>User Manager</h2>
+<button hx-get="/users/list" hx-target="#user-list" hx-swap="innerHTML">List Users</button>
+
+<div id="user-list">
+    <p>User list will be loaded here.</p>
+</div>
+{{ end }}
+
+{{ template "layout" . }}

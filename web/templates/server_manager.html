@@ -1,0 +1,10 @@
+{{ define "content" }}
+<h2>Server Manager</h2>
+<button hx-post="/server/rescan" hx-target="#server-manager-content" hx-swap="innerHTML">Rescan Media Library</button>
+
+<div id="server-manager-content">
+    <p>Server management actions will appear here.</p>
+</div>
+{{ end }}
+
+{{ template "layout" . }}

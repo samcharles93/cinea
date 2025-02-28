@@ -1,0 +1,15 @@
+{{ define "content" }}
+<h2>Media Browser</h2>
+
+<div id="media-browser-controls">
+    <input type="text" placeholder="Search Media" name="query" hx-get="/media/search" hx-target="#media-list" hx-trigger="keyup changed delay:500ms" hx-swap="innerHTML">
+</div>
+
+<div id="media-list">
+    {{ range .MediaItems }}
+        {{ template "media_item" . }}
+    {{ end }}
+</div>
+{{ end }}
+
+{{ template "layout" . }}

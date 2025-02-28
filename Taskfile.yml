@@ -1,0 +1,107 @@
+version: '3'
+
+vars:
+  BINARY_NAME: cinead
+  BUILD_DIR: dist
+  CONFIG_DIR: config
+
+env:
+  CGO_ENABLED: 1
+  JWT_SECRET: "cg973yverudyhiqgufwgiucshaufviudiakcbjdhv"
+
+tasks:
+  default:
+    cmds:
+      - task: run
+
+  init:
+    desc: Initialize development environment
+    cmds:
+      - go mod download
+      - go mod tidy
+      - mkdir -p {{.BUILD_DIR}}
+    status:
+      - test -d {{.BUILD_DIR}}
+
+  build:
+    desc: Build the application
+    cmds:
+      - go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}} .
+    sources:
+      - ./**/*.go
+    generates:
+      - build/{{.BINARY_NAME}}
+
+  install-tools:
+    desc: Install development tools
+    cmds:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - go install github.com/air-verse/air@latest
+    status:
+      - which golangci-lint
+      - which air
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./...
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v -race -cover ./...
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - rm -f *.db
+      - go clean
+
+  run:
+    desc: Run the application
+    deps: [build]
+    cmds:
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} --config {{.CONFIG_DIR}}/config.yaml
+
+  dev:
+    desc: Run with hot reload
+    cmds:
+      - air -c .air.toml
+    deps:
+      - install-tools
+
+  docker:
+    desc: Build and run with Docker
+    cmds:
+      - docker build -t cinea:latest .
+      - docker run -p 8080:8080 
+        -v {{.CONFIG_DIR}}:/app/config 
+        -v /mnt/media:/mnt/media:ro 
+        --name cinea 
+        cinea:latest
+
+  check:
+    desc: Run all checks
+    cmds:
+      - task: lint
+      - task: test
+
+  setup:
+    desc: Setup development environment
+    cmds:
+      - task: install-tools
+      - task: init
+      - task: check
+    silent: true
+
+  reset-db:
+    desc: Reset the database
+    cmds:
+      - rm -f cinea.db
+      - task: run
+      
+  help:
+    desc: Show task list
+    cmds:
+      - task --list

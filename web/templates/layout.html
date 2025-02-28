@@ -1,0 +1,36 @@
+{{ define "layout" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/" {{ if eq .ActivePage "dashboard" }}class="active"{{ end }}>Dashboard</a></li>
+            <li><a href="/media" {{ if eq .ActivePage "media" }}class="active"{{ end }}>Media Browser</a></li>
+            {{ if .User }}
+                {{ if eq .User.Role "admin" }}
+                <li><a href="/users" {{ if eq .ActivePage "users" }}class="active"{{ end }}>Users</a></li>
+                {{ end }}
+                <li><a href="/logout" hx-post="/logout" hx-push-url="true">Logout ({{ .User.Username }})</a></li>
+            {{ else }}
+                <li><a href="/login" {{ if eq .ActivePage "login" }}class="active"{{ end }}>Login</a></li>
+                <li><a href="/register" {{ if eq .ActivePage "register" }}class="active"{{ end }}>Register</a></li>
+            {{ end }}
+        </ul>
+    </nav>
+
+    <div class="container" style="margin-top: 60px;">
+        {{ template "notification" . }}
+        <div id="main-content">
+            {{ template "content" . }}
+        </div>
+    </div>
+</body>
+</html>
+{{ end }}

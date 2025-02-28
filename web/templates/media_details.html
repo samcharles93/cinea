@@ -1,0 +1,9 @@
+{{ define "content" }}
+<h2>Media Details</h2>
+<h3>{{ .MediaItem.Title }}</h3>
+<p>Type: {{ .MediaItem.MediaType }}</p>
+<p>Description: {{ .MediaItem.Description }}</p>
+<button hx-get="/media" hx-target="#content" hx-swap="innerHTML">Back to Media Browser</button>
+{{ end }}
+
+{{ template "layout" . }}

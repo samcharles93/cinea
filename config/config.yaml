@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+logging:
+  level: debug
+  format: json
+  outputs:
+    - stdout
+    - file
+  max_size: 100
+  max_age: 7
+  max_backups: 5
+
+auth:
+  jwt_secret: "your-super-secret-key-change-this-in-production"
+  token_lifetime: "24h"
+
+database:
+  driver: sqlite
+  sqlite:
+    path: cinea.db
+  postgres:
+    host: localhost
+    port: 5432
+    user: postgres
+    password: postgres
+    dbname: cinea
+    sslmode: disable
+
+meta:
+  tmdb:
+    bearer_token: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5MjI5ZGNlOWI1MGE0MWEyNjA3NjMxODNlN2JmZjFmMSIsIm5iZiI6MTcyOTg1MzU1NC4xNTYsInN1YiI6IjY3MWI3ODcyYzc4MDJjYzUwMzU5ZmNkNSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.qxDvOelyPN4jmEXhlfNi4FEWIouP5V0Yh7bU6pCz9to"
+    language: "en-US"
+    include_adult: false
+
+backup:
+  enabled: false
+  auto_backup: false
+  backup_dir: /mnt/media/backups
+  interval: 5d
+
+jobs:
+  cleanup:
+    enabled: true
+    delete_orphaned: false
+    delete_missing: true
+    clean_interval: 24h
+  scanner:
+    movie_dirs:
+      - /home/sam/media/movies
+    tvshow_dirs:
+      - /home/sam/media/tvshows
+    auto_scan: true
+    watch_dirs: true
+    scan_interval: 12h
