@@ -2,51 +2,35 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/samcharles93/cinea/internal/auth"
 	"github.com/samcharles93/cinea/internal/dto"
-	"github.com/samcharles93/cinea/internal/entity"
-	"github.com/samcharles93/cinea/internal/services"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/samcharles93/cinea/internal/service"
 )
 
-type AuthHandler struct {
-	userSvc services.UserService
+type AuthHandler interface {
+	RegisterRoutes(r chi.Router)
+	Login(w http.ResponseWriter, r *http.Request)
+	GetCurrentUser(w http.ResponseWriter, r *http.Request)
+	Register(w http.ResponseWriter, r *http.Request)
+	Logout(w http.ResponseWriter, r *http.Request)
 }
 
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
+type authHandler struct {
+	authSvc     service.AuthService
+	jwtVerifier *auth.JWTVerifier
 }
 
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+func NewAuthHandler(authSvc service.AuthService) AuthHandler {
+	return &authHandler{
+		authSvc:     authSvc,
+		jwtVerifier: auth.NewJWTVerifier(),
+	}
 }
 
-type AuthResponse struct {
-	Token string `json:"token"`
-	User  struct {
-		ID       uint   `json:"id"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Role     string `json:"role"`
-	} `json:"user"`
-}
-
-func NewAuthHandler(userSvc services.UserService) *AuthHandler {
-	return &AuthHandler{userSvc: userSvc}
-}
-
-func (h *AuthHandler) RegisterRoutes(r chi.Router) {
+func (h *authHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", h.Register)
 		r.Post("/login", h.Login)
@@ -55,8 +39,8 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	})
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
+func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -68,75 +52,18 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userRepo.FindByUsername(r.Context(), req.Username)
+	userDTO, err := h.authSvc.Authenticate(r.Context(), req.Username, req.Password)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	if user == nil || bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	tokenString, err := h.generateToken(user)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
-	}
-
-	userDTO := dto.UserToDTO(user)
-	resp := AuthResponse{
-		Token: tokenString,
-		User: struct {
-			ID       uint   `json:"id"`
-			Username string `json:"username"`
-			Email    string `json:"email"`
-			Role     string `json:"role"`
-		}{
-			ID:       userDTO.ID,
-			Username: userDTO.Username,
-			Email:    userDTO.Email,
-			Role:     userDTO.Role,
-		},
-	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(userDTO)
 }
 
-func (h *AuthHandler) generateToken(user *entity.User) (string, error) {
-	tokenLifetime, err := time.ParseDuration(h.config.Auth.TokenLifetime)
-	if err != nil {
-		tokenLifetime = 24 * time.Hour
-	}
-
-	now := time.Now()
-
-	claims := jwt.MapClaims{
-		"jti": uuid.New().String(),
-		"iat": now.Unix(),
-		"nbf": now.Unix(),
-		"exp": now.Add(tokenLifetime).Unix(),
-		"sub": strconv.FormatUint(uint64(user.ID), 10),
-		"user": map[string]interface{}{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"role":     user.Role,
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(h.config.Auth.JWTSecret))
-	if err != nil {
-		return "", fmt.Errorf("failed to sign token: %w", err)
-	}
-
-	return signedToken, nil
-}
-
-func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	user, err := auth.GetUserFromContext(r.Context())
+func (h *authHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	user, err := h.authSvc.GetUserFromContext(r.Context())
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -148,8 +75,8 @@ func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userDTO)
 }
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req RegisterRequest
+func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var req dto.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -161,34 +88,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userSvc.CreateUser(r.Context(), req.Username, req.Email, req.Password)
+	user, err := h.authSvc.CreateUser(r.Context(), req.Username, req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Prepare response
-	resp := AuthResponse{
-		Token: tokenString,
-		User: struct {
-			ID       uint   `json:"id"`
-			Username string `json:"username"`
-			Email    string `json:"email"`
-			Role     string `json:"role"`
-		}{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email,
-			Role:     string(user.Role),
-		},
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode()
 }
 
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Since we're using JWT, we just need to return success
 	// The frontend should handle removing the token
 	w.WriteHeader(http.StatusOK)

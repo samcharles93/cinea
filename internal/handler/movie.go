@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samcharles93/cinea/internal/auth"
-	"github.com/samcharles93/cinea/internal/persistence"
+	"github.com/samcharles93/cinea/internal/service"
 	"github.com/samcharles93/cinea/internal/services/metadata"
 )
 
@@ -19,16 +20,16 @@ type MovieHandler interface {
 }
 
 type movieHandler struct {
-	movieRepo   persistence.MovieRepository
-	tmdb        *metadata.TMDbService
-	jwtVerifier *auth.JWTVerifier
+	movieService service.MediaService
+	tmdb         *metadata.TMDbService
+	jwtVerifier  *auth.JWTVerifier
 }
 
-func NewMovieHandler(movieRepo persistence.MovieRepository, tmdb *metadata.TMDbService, jwtVerifier *auth.JWTVerifier) MovieHandler {
+func NewMovieHandler(movieService service.MediaService, tmdb *metadata.TMDbService, jwtVerifier *auth.JWTVerifier) MovieHandler {
 	return &movieHandler{
-		movieRepo:   movieRepo,
-		tmdb:        tmdb,
-		jwtVerifier: jwtVerifier,
+		movieService: movieService,
+		tmdb:         tmdb,
+		jwtVerifier:  jwtVerifier,
 	}
 }
 
@@ -44,41 +45,48 @@ func (h *movieHandler) RegisterRoutes(r chi.Router) {
 }
 
 func (h *movieHandler) List(w http.ResponseWriter, r *http.Request) {
-	movies, err := h.movieRepo.FindAll(r.Context())
+	movies, err := h.movieService.GetAllMovies(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.writeJSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(movies)
+	h.writeJSON(w, http.StatusOK, movies)
 }
 
 func (h *movieHandler) Get(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
-	id64, err := strconv.ParseUint(idStr, 10, 64)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid movie ID", http.StatusBadRequest)
+		h.writeJSONError(w, http.StatusBadRequest, errors.New("invalid ID format"))
 		return
 	}
 
-	id := uint(id64)
-	movie, err := h.movieRepo.FindByID(r.Context(), id)
+	movie, err := h.movieService.GetMovieByID(r.Context(), uint(id))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.writeJSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if movie == nil {
-		http.Error(w, "Movie not found", http.StatusNotFound)
+		h.writeJSONError(w, http.StatusNotFound, errors.New("movie not found"))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(movie)
+	h.writeJSON(w, http.StatusOK, movie)
 }
 
 func (h *movieHandler) Stream(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement streaming logic
 	http.Error(w, "Not implemented", http.StatusNotImplemented)
+}
+
+func (h *movieHandler) writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+func (h *movieHandler) writeJSONError(w http.ResponseWriter, status int, err error) {
+	h.writeJSON(w, status, map[string]string{"error": err.Error()})
 }

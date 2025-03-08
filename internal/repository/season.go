@@ -1,4 +1,4 @@
-package persistence
+package repository
 
 import (
 	"context"
@@ -13,8 +13,7 @@ import (
 
 type SeasonRepository interface {
 	AddSeason(ctx context.Context, season *entity.Season) error
-	FindSeasonByNumber(ctx context.Context, showID uint, seasonNumber int) (*entity.Season, error)
-	FindSeasonByID(ctx context.Context, seasonID uint) (*entity.Season, error)
+	FindBySeriesID(ctx context.Context, seriesID uint) (*entity.Season, error)
 	UpdateSeason(ctx context.Context, season *entity.Season) error
 	DeleteSeason(ctx context.Context, id uint) error
 }
@@ -39,21 +38,9 @@ func (r *seasonRepository) AddSeason(ctx context.Context, season *entity.Season)
 	return nil
 }
 
-func (r *seasonRepository) FindSeasonByNumber(ctx context.Context, showID uint, seasonNumber int) (*entity.Season, error) {
+func (r *seasonRepository) FindBySeriesID(ctx context.Context, seriesID uint) (*entity.Season, error) {
 	var season entity.Season
-	result := r.db.WithContext(ctx).Preload("Episodes").Where("series_id = ? AND season_number = ?", showID, seasonNumber).First(&season)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to find season by number: %w", result.Error)
-	}
-	return &season, nil
-}
-
-func (r *seasonRepository) FindSeasonByID(ctx context.Context, seasonID uint) (*entity.Season, error) {
-	var season entity.Season
-	result := r.db.WithContext(ctx).Preload("Episodes").First(&season, seasonID)
+	result := r.db.WithContext(ctx).Preload("Episodes").First(&season, seriesID)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil

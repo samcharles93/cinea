@@ -1,12 +1,12 @@
-package persistence
+package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/samcharles93/cinea/internal/entity"
+	"github.com/samcharles93/cinea/internal/errors"
 	"github.com/samcharles93/cinea/internal/logger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -47,14 +47,19 @@ func (r *movieRepository) Store(ctx context.Context, movie *entity.Movie) error 
 }
 
 func (r *movieRepository) FindByID(ctx context.Context, id uint) (*entity.Movie, error) {
+	if id == 0 {
+		return nil, fmt.Errorf("invalid movie ID: %w", errors.ErrBadRequest)
+	}
+
 	var movie entity.Movie
 	result := r.db.WithContext(ctx).First(&movie, id)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, fmt.Errorf("movie with ID %d not found: %w", id, errors.ErrNotFound)
 		}
-		return nil, fmt.Errorf("failed to find movie by ID: %w", result.Error)
+		return nil, fmt.Errorf("database error finding movie %d: %w", id, result.Error)
 	}
+
 	return &movie, nil
 }
 

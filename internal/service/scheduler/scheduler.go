@@ -8,7 +8,7 @@ import (
 	"github.com/reugn/go-quartz/quartz"
 	"github.com/samcharles93/cinea/internal/entity"
 	"github.com/samcharles93/cinea/internal/logger"
-	"github.com/samcharles93/cinea/internal/persistence"
+	"github.com/samcharles93/cinea/internal/repository"
 )
 
 type TaskExecutor interface {
@@ -27,10 +27,10 @@ type scheduler struct {
 	scheduler quartz.Scheduler
 	appLogger logger.Logger
 	tasks     map[string]TaskExecutor
-	repo      persistence.SchedulerRepository
+	repo      repository.SchedulerRepository
 }
 
-func NewScheduler(appLogger logger.Logger, repo persistence.SchedulerRepository) (Scheduler, error) {
+func NewScheduler(appLogger logger.Logger, repo repository.SchedulerRepository) (Scheduler, error) {
 	sched, err := quartz.NewStdScheduler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise scheduler instance: %w", err)
@@ -87,7 +87,7 @@ type taskWrapper struct {
 	task      *entity.ScheduledTask
 	executor  TaskExecutor
 	appLogger logger.Logger
-	repo      persistence.SchedulerRepository
+	repo      repository.SchedulerRepository
 }
 
 func (s *scheduler) scheduleTask(task *entity.ScheduledTask, executor TaskExecutor) error {

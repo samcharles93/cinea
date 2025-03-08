@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/samcharles93/cinea/internal/entity"
-	"github.com/samcharles93/cinea/internal/services/metadata"
+	"github.com/samcharles93/cinea/internal/service/metadata"
 )
 
 func (s *service) processMovieFile(ctx context.Context, lib *entity.Library, filePath string) error {

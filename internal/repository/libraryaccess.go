@@ -1,4 +1,4 @@
-package persistence
+package repository
 
 import (
 	"github.com/samcharles93/cinea/internal/logger"

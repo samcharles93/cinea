@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/samcharles93/cinea/internal/entity"
-	"github.com/samcharles93/cinea/internal/services/metadata"
+	"github.com/samcharles93/cinea/internal/service/metadata"
 )
 
 func (s *service) processSeriesFile(ctx context.Context, lib *entity.Library, filePath string) error {
@@ -96,7 +96,7 @@ func (s *service) processSeriesFile(ctx context.Context, lib *entity.Library, fi
 	}
 
 	// 5.2 Find or Create Season
-	season, err := s.seasonRepo.FindSeasonByNumber(ctx, series.ID, tvInfo.Season)
+	season, err := s.seasonRepo.FindBySeriesID(ctx, series.ID)
 	if err != nil {
 		return fmt.Errorf("error checking for existing season: %w", err)
 	}

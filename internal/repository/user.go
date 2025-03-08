@@ -1,4 +1,4 @@
-package persistence
+package repository
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id uint) error
-	AdminGetUsers() ([]*entity.User, error)
+	List(ctx context.Context) ([]*entity.User, error)
 	UpdateLastLogin(ctx context.Context, id uint) error
 }
 
@@ -217,7 +217,7 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (r *userRepository) AdminGetUsers() ([]*entity.User, error) {
+func (r *userRepository) List(ctx context.Context) ([]*entity.User, error) {
 	r.appLogger.Debug().
 		Msg("Getting all users (admin)")
 

@@ -1,11 +1,11 @@
-package services
+package service
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/samcharles93/cinea/internal/entity"
-	"github.com/samcharles93/cinea/internal/persistence"
+	"github.com/samcharles93/cinea/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,10 +16,10 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo persistence.UserRepository
+	userRepo repository.UserRepository
 }
 
-func NewUserService(userRepo persistence.UserRepository) UserService {
+func NewUserService(userRepo repository.UserRepository) UserService {
 	return &userService{
 		userRepo: userRepo,
 	}
@@ -73,5 +73,5 @@ func (s *userService) CreateUser(ctx context.Context, username string, email str
 
 // ListUsers
 func (s *userService) ListUsers(ctx context.Context) ([]*entity.User, error) {
-	return s.userRepo.AdminGetUsers()
+	return s.userRepo.List(ctx)
 }

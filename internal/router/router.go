@@ -42,20 +42,21 @@ func NewRouter(
 		userHandler.RegisterRoutes(r)
 	})
 
-	webHandler.
-		r.Get("/", webService.DashboardHandler)
-	r.Get("/login", webService.LoginHandler)
-	r.Post("/login", webService.LoginHandler)
-	r.Get("/register", webService.RegisterHandler)
-	r.Post("/register", webService.RegisterHandler)
-	r.Post("/logout", webService.LogoutHandler)
-	r.Get("/users", webService.UserManagerHandler)
-	r.Get("/media", webService.MediaBrowserHandler)
-	r.Get("/media/{id}", webService.MediaDetailsHandler)
+	// Web routes
+	webHandler.RegisterRoutes(r)
+	//r.Get("/", webHandler.DashboardHandler)
+	//r.Get("/login", webHandler.LoginHandler)
+	//r.Post("/login", webHandler.LoginHandler)
+	//r.Get("/register", webHandler.RegisterHandler)
+	//r.Post("/register", webHandler.RegisterHandler)
+	//r.Post("/logout", webHandler.LogoutHandler)
+	//r.Get("/users", webHandler.UserManagerHandler)
+	//r.Get("/media", webHandler.MediaBrowserHandler)
+	//r.Get("/media/{id}", webHandler.MediaDetailsHandler)
 
 	r.Group(func(r chi.Router) {
-		r.Use(webService.JWTMiddleware)
-		r.Get("/me", webService.GetCurrentUser)
+		r.Use(webHandler.JWTMiddleware)
+		r.Get("/me", webHandler.GetCurrentUser)
 	})
 
 	return r

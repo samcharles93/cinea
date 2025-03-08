@@ -10,7 +10,7 @@ import (
 	"github.com/samcharles93/cinea/config"
 	"github.com/samcharles93/cinea/internal/auth"
 	"github.com/samcharles93/cinea/internal/logger"
-	"github.com/samcharles93/cinea/internal/persistence"
+	"github.com/samcharles93/cinea/internal/service"
 )
 
 type WebService interface {
@@ -28,33 +28,27 @@ type WebService interface {
 }
 
 type webService struct {
-	webFS       embed.FS
-	config      *config.Config
-	appLogger   logger.Logger
-	tokenAuth   *jwtauth.JWTAuth
-	templates   *template.Template
-	userRepo    persistence.UserRepository
-	libraryRepo persistence.LibraryRepository
-	movieRepo   persistence.MovieRepository
-	seriesRepo  persistence.SeriesRepository
-	seasonRepo  persistence.SeasonRepository
-	episodeRepo persistence.EpisodeRepository
-	jwtVerifier *auth.JWTVerifier
+	webFS        embed.FS
+	config       *config.Config
+	appLogger    logger.Logger
+	tokenAuth    *jwtauth.JWTAuth
+	templates    *template.Template
+	userService  service.UserService
+	mediaService service.MediaService
+	jwtVerifier  *auth.JWTVerifier
 }
 
 // NewWebService creates a new web service
 func NewWebService(
 	cfg *config.Config,
 	appLogger logger.Logger,
-	userRepo persistence.UserRepository,
-	libraryRepo persistence.LibraryRepository,
-	movieRepo persistence.MovieRepository,
-	seriesRepo persistence.SeriesRepository,
-	seasonRepo persistence.SeasonRepository,
-	episodeRepo persistence.EpisodeRepository,
+	userService service.UserService,
+	mediaService service.MediaService,
 	tokenAuth *jwtauth.JWTAuth,
 	webFS embed.FS,
 ) WebService {
+	jwtVerifier := auth.NewJWTVerifier(tokenAuth)
+
 	// Try to parse all templates
 	tmpl, err := template.ParseFS(webFS, "web/templates/**/*.html")
 	if err != nil {
@@ -62,21 +56,15 @@ func NewWebService(
 		// Don't panic, but log the error
 	}
 
-	jwtVerifier := auth.NewJWTVerifier(tokenAuth)
-
 	return &webService{
-		config:      cfg,
-		appLogger:   appLogger,
-		tokenAuth:   tokenAuth,
-		webFS:       webFS,
-		templates:   tmpl,
-		userRepo:    userRepo,
-		libraryRepo: libraryRepo,
-		movieRepo:   movieRepo,
-		seriesRepo:  seriesRepo,
-		seasonRepo:  seasonRepo,
-		episodeRepo: episodeRepo,
-		jwtVerifier: jwtVerifier,
+		config:       cfg,
+		appLogger:    appLogger,
+		tokenAuth:    tokenAuth,
+		webFS:        webFS,
+		templates:    tmpl,
+		userService:  userService,
+		mediaService: mediaService,
+		jwtVerifier:  jwtVerifier,
 	}
 }
 

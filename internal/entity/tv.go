@@ -23,6 +23,10 @@ type Series struct {
 	Seasons []Season `gorm:"foreignKey:SeriesID"`
 }
 
+func (s Series) SeasonCount() int {
+	return len(s.Seasons)
+}
+
 type Season struct {
 	LibraryItem
 	SeriesID     uint   `gorm:"not null"`
@@ -34,6 +38,10 @@ type Season struct {
 	LastScanned  time.Time
 
 	Episodes []Episode `gorm:"foreignKey:SeasonID"`
+}
+
+func (s Season) EpisodeCount() int {
+	return len(s.Episodes)
 }
 
 type Episode struct {

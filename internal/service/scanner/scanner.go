@@ -9,9 +9,9 @@ import (
 	"github.com/samcharles93/cinea/config"
 	"github.com/samcharles93/cinea/internal/entity"
 	"github.com/samcharles93/cinea/internal/logger"
-	"github.com/samcharles93/cinea/internal/persistence"
-	"github.com/samcharles93/cinea/internal/services/extractor"
-	"github.com/samcharles93/cinea/internal/services/metadata"
+	"github.com/samcharles93/cinea/internal/repository"
+	"github.com/samcharles93/cinea/internal/service/extractor"
+	"github.com/samcharles93/cinea/internal/service/metadata"
 )
 
 type Service interface {
@@ -20,18 +20,18 @@ type Service interface {
 	scanPath(ctx context.Context, lib *entity.Library, path string) error
 
 	// Task scheduler methods
-	Execute(ctx context.Context, configStr string) error
+	Execute(ctx context.Context, config string) error
 	Description() string
 }
 
 type service struct {
 	config         *config.Config
 	appLogger      logger.Logger
-	libraryRepo    persistence.LibraryRepository
-	movieRepo      persistence.MovieRepository
-	seriesRepo     persistence.SeriesRepository
-	seasonRepo     persistence.SeasonRepository
-	episodeRepo    persistence.EpisodeRepository
+	libraryRepo    repository.LibraryRepository
+	movieRepo      repository.MovieRepository
+	seriesRepo     repository.SeriesRepository
+	seasonRepo     repository.SeasonRepository
+	episodeRepo    repository.EpisodeRepository
 	tmdb           *metadata.TMDbService
 	mediaExtractor extractor.Service
 }
@@ -50,11 +50,11 @@ type mediaInfo struct {
 func NewScannerService(
 	cfg *config.Config,
 	appLogger logger.Logger,
-	libraryRepo persistence.LibraryRepository,
-	movieRepo persistence.MovieRepository,
-	seriesRepo persistence.SeriesRepository,
-	seasonRepo persistence.SeasonRepository,
-	episodeRepo persistence.EpisodeRepository,
+	libraryRepo repository.LibraryRepository,
+	movieRepo repository.MovieRepository,
+	seriesRepo repository.SeriesRepository,
+	seasonRepo repository.SeasonRepository,
+	episodeRepo repository.EpisodeRepository,
 	tmdb *metadata.TMDbService,
 	mediaExtractor extractor.Service,
 ) Service {
@@ -72,7 +72,7 @@ func NewScannerService(
 }
 
 // Execute implements the scheduler.TaskExecutor interface
-func (s *service) Execute(ctx context.Context, configStr string) error {
+func (s *service) Execute(ctx context.Context, config string) error {
 	// TODO - Parse the configStr to get scanner configuration (e.g. which libraries to scan)
 
 	s.appLogger.Info().Str("package", "scanner").Msg("Starting scan from the scheduler")
